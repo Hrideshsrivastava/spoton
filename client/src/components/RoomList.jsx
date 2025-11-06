@@ -1,13 +1,20 @@
-import React from 'react';
-import RoomCard from './RoomCard';
+import React from "react";
+import RoomCard from "./RoomCard";
 
-export default function RoomList({ rooms, onBook, bookedTokens }) {
-  // bookedTokens: array of room names currently booked (for slot) -> to disable book button
-  if (!rooms) return null;
-  if (rooms.length === 0) return <div className="small">No available rooms for this slot.</div>;
+export default function RoomList({ rooms, bookedRooms, onBook }) {
+  if (!rooms.length)
+    return <p className="text-center text-slate-400 mt-10">No available rooms for this slot.</p>;
+
   return (
-    <div className="grid">
-      {rooms.map(r => <RoomCard key={r} name={r} onBook={onBook} isBooked={bookedTokens?.includes(r)} />)}
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-8">
+      {rooms.map((r) => (
+        <RoomCard
+          key={r}
+          name={r}
+          onBook={onBook}
+          isBooked={bookedRooms.includes(r)}
+        />
+      ))}
     </div>
   );
 }

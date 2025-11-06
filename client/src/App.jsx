@@ -1,88 +1,93 @@
-import React, { useEffect, useState } from 'react';
-import api from './api';
-import FilterBar from './components/FilterBar';
-import RoomList from './components/RoomList';
-import BookingModal from './components/BookingModal';
-import { io } from 'socket.io-client';
+import React, { useEffect, useState } from "react";
+import api from "./api";
+import FilterBar from "./components/FilterBar";
+import RoomList from "./components/RoomList";
+import BookingModal from "./components/BookingModal";
+import { io } from "socket.io-client";
 
 export default function App() {
   const [days, setDays] = useState([]);
   const [times, setTimes] = useState([]);
-  const [day, setDay] = useState('');
-  const [time, setTime] = useState('');
+  const [day, setDay] = useState("");
+  const [time, setTime] = useState("");
   const [rooms, setRooms] = useState([]);
-  const [bookedRooms, setBookedRooms] = useState([]); // names currently booked in this slot
+  const [bookedRooms, setBookedRooms] = useState([]);
   const [modal, setModal] = useState({ open: false, room: null });
 
   useEffect(() => {
     (async () => {
-      try {
-        const res = await api.get('/api/all');
-        setDays(res.data.days);
-        setTimes(res.data.times);
-      } catch (e) {
-        console.warn('/api/all failed', e);
-      }
+      const res = await api.get("/api/all");
+      setDays(res.data.days);
+      setTimes(res.data.times);
+
+      // Auto-select current day and nearest time
+      const now = new Date();
+      const daysOfWeek = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+      setDay(daysOfWeek[now.getDay()]);
+      const hour = now.getHours();
+      setTime(`${hour}-${hour + 1}`);
     })();
 
-    const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
-    socket.on('booking_update', () => {
+    const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000");
+    socket.on("booking_update", () => {
       if (day && time) fetchRooms(day, time);
     });
-    socket.on('booking_cleanup', () => {
-      if (day && time) fetchRooms(day, time);
-    });
-    socket.on('reload', () => {
-      // reload filters & maybe reload page
-      api.get('/api/all').then(r => { setDays(r.data.days); setTimes(r.data.times); }).catch(()=>{});
+    socket.on("reload", () => {
       if (day && time) fetchRooms(day, time);
     });
     return () => socket.disconnect();
   }, []);
 
-  useEffect(() => {
-    if (day && time) fetchRooms(day, time);
-    else { setRooms([]); setBookedRooms([]); }
-  }, [day, time]);
-
   async function fetchRooms(d, t) {
     try {
-      const res = await api.get('/api/slot', { params: { day: d, time: t } });
+      const res = await api.get("/api/slot", { params: { day: d, time: t } });
       setRooms(res.data.empties || []);
-      const slotBookings = res.data.bookings || [];
-      setBookedRooms(slotBookings.map(b => b.room));
-    } catch (err) {
+      setBookedRooms(res.data.bookings?.map((b) => b.room) || []);
+    } catch {
       setRooms([]);
-      setBookedRooms([]);
     }
   }
 
-  function openBooking(roomName) {
-    setModal({ open: true, room: roomName });
-  }
-
-  function onBooked() {
+  useEffect(() => {
     if (day && time) fetchRooms(day, time);
-  }
+  }, [day, time]);
 
   return (
-    <div className="container">
-      <div className="header">
-        <h1>Empty Classroom Finder</h1>
-        <div className="small">CSV-backed • In-memory bookings persisted to disk • Real-time updates</div>
-      </div>
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      <header className="sticky top-0 z-10 bg-darkbg/90 backdrop-blur-md border-b border-slate-800 flex flex-col sm:flex-row justify-between items-center p-4 rounded-lg shadow-neon">
+        <strong> <h1 class="text-xl sm:text-2xl text-center font-bold text-neon drop-shadow-glow">SpotON</h1></strong>
+        <p className="text-xs sm:text-sm text-slate-400">Realtime | Mobile-friendly</p>
+      </header>
 
-      <FilterBar days={days} times={times} selectedDay={day} selectedTime={time} onChange={({ day: d, time: t }) => { setDay(d); setTime(t); }} />
+      <FilterBar
+        days={days}
+        times={times}
+        selectedDay={day}
+        selectedTime={time}
+        onChange={({ day: d, time: t }) => {
+          setDay(d);
+          setTime(t);
+        }}
+      />
 
-      <div style={{marginTop:8}}>
-        <RoomList rooms={rooms} onBook={openBooking} bookedTokens={bookedRooms} />
-      </div>
+      <RoomList
+        rooms={rooms}
+        bookedRooms={bookedRooms}
+        onBook={(r) => setModal({ open: true, room: r })}
+      />
 
-      <BookingModal open={modal.open} onClose={() => setModal({ open: false, room: null })} day={day} time={time} room={modal.room} onBooked={onBooked} />
+      <BookingModal
+        open={modal.open}
+        onClose={() => setModal({ open: false, room: null })}
+        day={day}
+        time={time}
+        room={modal.room}
+        onBooked={() => fetchRooms(day, time)}
+      />
 
-      <div className="footer">
-        Tip: Admins can upload a new CSV via POST /api/upload to swap the timetable.
-      </div>
+      <footer className="text-center mt-10 text-xs text-slate-500">
+        © 2025 SpotOn | Built with TailwindCSS
+      </footer>
     </div>
   );
 }

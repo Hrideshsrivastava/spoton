@@ -1,21 +1,41 @@
 {
-  "FRIDAY": {
-    "CR401": [
+  "MONDAY": {
+    "CR425": [
       {
-        "time": "11-12",
-        "token": "77b92816-889c-4e42-9495-5d1e80329ad8",
+        "time": "3-4",
+        "token": "0fcdf363-e41e-4a3c-a278-46886ebf4280",
         "user": null,
-        "bookedAt": 1762454669866,
-        "expiresAt": 1762458269866
+        "bookedAt": 1762461980566,
+        "expiresAt": 1762465580566
+      }
+    ]
+  },
+  "FRIDAY": {
+    "CR702": [
+      {
+        "time": "2-3",
+        "token": "fffd0099-d447-48bb-a64f-6e64305eb3ab",
+        "user": null,
+        "bookedAt": 1762462246079,
+        "expiresAt": 1762465846079
       }
     ],
-    "CR701": [
+    "FF6": [
       {
-        "time": "9-10",
-        "token": "40eb2c50-8403-49cd-9612-c3ed8ce35453",
+        "time": "2-3",
+        "token": "5bdf9ff0-413d-47a2-8f5d-57ede26f87be",
         "user": null,
-        "bookedAt": 1762455602270,
-        "expiresAt": 1762459202270
+        "bookedAt": 1762462371999,
+        "expiresAt": 1762465971999
+      }
+    ],
+    "FF5": [
+      {
+        "time": "2-3",
+        "token": "860b759b-2e68-4fb0-b88e-8a8c63f5890a",
+        "user": null,
+        "bookedAt": 1762462552206,
+        "expiresAt": 1762466152206
       }
     ]
   }
