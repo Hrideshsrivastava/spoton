@@ -82,41 +82,28 @@ function loadCSV(filePath = CSV_PATH) {
       return;
     }
     fs.createReadStream(filePath)
-      .pipe(csv())
-      .on('data', (row) => {
-        // Accept flexible column names: Day/day, Classroom/class, Time/time, etc.
-        const keys = Object.keys(row);
-        const rowLower = {};
-        keys.forEach(k => rowLower[k.trim().toLowerCase()] = row[k]);
+  .pipe(csv({ headers: ["day", "classroom", "time"], skipLines: 0 }))
+  .on("data", (row) => {
+    const day = normalizeDay(row.day);
+    const room = normalizeRoom(row.classroom);
+    const time = normalizeTime(row.time);
+    if (!day || !room || !time) return;
 
-        const dayRaw = rowLower['day'] ?? rowLower['weekday'] ?? rowLower['d'] ?? rowLower['dayname'];
-        const roomRaw = rowLower['classroom'] ?? rowLower['room'] ?? rowLower['class'] ?? rowLower['class_code'];
-        const timeRaw = rowLower['time'] ?? rowLower['timeslot'] ?? rowLower['slot'];
-        if (!dayRaw || !roomRaw || !timeRaw) return; // skip bad rows
-        const day = normalizeDay(dayRaw);
-        const room = normalizeRoom(roomRaw);
-        const time = normalizeTime(timeRaw);
-        if (!map[day]) map[day] = {};
-        if (!map[day][room]) map[day][room] = new Set();
-        map[day][room].add(time);
-      })
-      .on('end', () => {
-        // convert sets
-        for (const d of Object.keys(map)) {
-          for (const r of Object.keys(map[d])) {
-            map[d][r] = new Set(Array.from(map[d][r]).map(t => normalizeTime(t)));
-          }
-        }
-        // atomically replace global
-        Object.keys(emptyMap).forEach(k => delete emptyMap[k]);
-        Object.assign(emptyMap, map);
-        console.log('CSV loaded. Days:', Object.keys(emptyMap).length);
-        resolve(map);
-      })
-      .on('error', (err) => {
-        console.error('CSV parse error', err);
-        reject(err);
-      });
+    if (!map[day]) map[day] = {};
+    if (!map[day][room]) map[day][room] = new Set();
+    map[day][room].add(time);
+  })
+  .on("end", () => {
+    Object.keys(emptyMap).forEach(k => delete emptyMap[k]);
+    Object.assign(emptyMap, map);
+    console.log("CSV loaded successfully. Days:", Object.keys(emptyMap).length);
+    resolve(map);
+  })
+  .on("error", (err) => {
+    console.error("CSV parse error", err);
+    reject(err);
+  });
+
   });
 }
 
@@ -162,16 +149,55 @@ function getAvailableRooms(day, time) {
 
 // metadata: days + times (derived)
 app.get('/api/all', (req, res) => {
-  const days = Object.keys(emptyMap).sort();
+  // Ordered days of the week
+  const validWeekdays = [
+    "MONDAY",
+    "TUESDAY",
+    "WEDNESDAY",
+    "THURSDAY",
+    "FRIDAY",
+    "SATURDAY",
+    "SUNDAY"
+  ];
+
+  // Filter & order days
+  let days = Object.keys(emptyMap)
+    .map(d => d.trim().toUpperCase())
+    .filter(d => validWeekdays.includes(d));
+  days = validWeekdays.filter(d => days.includes(d));
+
+  // Collect all unique time slots
   const timesSet = new Set();
   for (const d of Object.keys(emptyMap)) {
     for (const r of Object.keys(emptyMap[d])) {
-      for (const t of Array.from(emptyMap[d][r])) timesSet.add(t);
+      for (const t of Array.from(emptyMap[d][r])) {
+        const trimmed = String(t).trim();
+        if (trimmed && trimmed.toLowerCase() !== "time" && trimmed.toLowerCase() !== "select time") {
+          timesSet.add(trimmed);
+        }
+      }
     }
   }
-  const times = Array.from(timesSet).sort();
+
+  // Your desired chronological college order
+  const preferredOrder = [
+    "8-9", "9-10", "10-11", "11-12", "12-1", "1-2", "2-3", "3-4", "4-5", "5-6"
+  ];
+
+  // Sort times based on the above list (default to end if unmatched)
+  const times = Array.from(timesSet).sort((a, b) => {
+    const ai = preferredOrder.indexOf(a);
+    const bi = preferredOrder.indexOf(b);
+    if (ai === -1 && bi === -1) return 0;
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+
   res.json({ days, times });
 });
+
+
 
 // get available rooms: /api/rooms?day=MONDAY&time=3-4
 app.get('/api/rooms', (req, res) => {
@@ -220,6 +246,19 @@ app.post('/api/book', async (req, res) => {
       res.status(400).json({ error: 'Room already booked' });
       return;
     }
+    // Check if user already has an active booking
+if (user) {
+  const alreadyHasBooking = Object.values(bookings).some(dayRooms =>
+    Object.values(dayRooms).some(roomArr =>
+      roomArr.some(b => b.user === user && b.expiresAt > nowMs())
+    )
+  );
+  if (alreadyHasBooking) {
+    res.status(400).json({ error: 'You already have an active booking' });
+    return;
+  }
+}
+
     const token = uuidv4();
     const bookedAt = nowMs();
     const expiresAt = bookedAt + BOOKING_DURATION_MS;
@@ -252,6 +291,23 @@ app.post('/api/unbook', async (req, res) => {
     io.emit('booking_update', { action: 'unbook', day: D, room: R, time: T, token: removed.token });
     res.json({ success: true });
   });
+});
+// get all active bookings by user
+app.get('/api/user-bookings', (req, res) => {
+  const user = req.query.user;
+  if (!user) return res.status(400).json({ error: 'Missing user' });
+
+  const out = [];
+  for (const day of Object.keys(bookings)) {
+    for (const room of Object.keys(bookings[day])) {
+      for (const b of bookings[day][room]) {
+        if (b.user === user && b.expiresAt > nowMs()) {
+          out.push({ ...b, room, day });
+        }
+      }
+    }
+  }
+  res.json({ bookings: out });
 });
 
 // admin: reload CSV from disk
