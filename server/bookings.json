@@ -2,29 +2,11 @@
   "FRIDAY": {
     "CR401": [
       {
-        "time": "11-12",
-        "token": "4caba967-d875-4706-8399-447fb0b6cc8b",
-        "user": "0",
-        "bookedAt": 1762495575540,
-        "expiresAt": 1762499175540
-      }
-    ],
-    "CR701": [
-      {
-        "time": "11-12",
-        "token": "0caaa288-aefc-41c5-ad43-16f5d4300355",
+        "time": "5-6",
+        "token": "db467fa5-968a-46e7-a3e7-5e313bbe00d0",
         "user": "1",
-        "bookedAt": 1762495630839,
-        "expiresAt": 1762499230839
-      }
-    ],
-    "CR702": [
-      {
-        "time": "11-12",
-        "token": "386b1985-e85d-46b5-a538-dd969420ccf7",
-        "user": "2",
-        "bookedAt": 1762495796355,
-        "expiresAt": 1762499396355
+        "bookedAt": 1762522348683,
+        "expiresAt": 1762525948683
       }
     ]
   }
