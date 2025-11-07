@@ -3,6 +3,8 @@ import api from "../api";
 import FilterBar from "./FilterBar";
 import RoomCard from "./RoomCard";
 import BookingModal from "./BookingModal";
+import socket from "../socket";
+
 
 export default function RoomList({ user }) {
   const [days, setDays] = useState([]);
@@ -84,6 +86,30 @@ export default function RoomList({ user }) {
     }
     loadRooms();
   }, [selected]);
+
+
+  // 🔄 Listen for live booking updates
+useEffect(() => {
+  function handleBookingUpdate(data) {
+    if (!selected.day || !selected.time) return;
+
+    // Only refresh if the current visible slot matches the event
+    if (data.day === selected.day && data.time === selected.time) {
+      // Refresh room list
+      setTimeout(() => {
+        setSelected((prev) => ({ ...prev })); // triggers reload
+      }, 100);
+    }
+  }
+
+  socket.on("booking_update", handleBookingUpdate);
+  socket.on("booking_cleanup", handleBookingUpdate); // also handle cleanup events
+
+  return () => {
+    socket.off("booking_update", handleBookingUpdate);
+    socket.off("booking_cleanup", handleBookingUpdate);
+  };
+}, [selected]);
 
   return (
     <div className="p-4 flex flex-col items-center text-slate-100">

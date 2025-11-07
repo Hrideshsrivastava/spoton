@@ -86,7 +86,8 @@ export default function App() {
         : "translate-x-full opacity-0 pointer-events-none"}
       overflow-y-auto touch-pan-y scroll-smooth`}
   >
-    <MyBookings user={user} />
+    <MyBookings user={user} active={page === "bookings"} />
+
   </div>
 </div>
 

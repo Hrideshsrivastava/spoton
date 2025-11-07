@@ -1,49 +1,79 @@
 import React, { useEffect, useState } from "react";
 import api from "../api";
-
+import socket from "../socket";
 export default function MyBookings({ user, active }) {
   const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   async function loadBookings() {
+    if (!user) return;
+    setLoading(true);
     try {
       const res = await api.get(`/api/user-bookings?user=${user}`);
-
       setBookings(res.data.bookings || []);
     } catch (err) {
       console.error("Booking load failed:", err);
+    } finally {
+      setLoading(false);
     }
   }
 
-  // Load when mounted
+  // 🔹 Fetch latest data when this tab becomes active
   useEffect(() => {
-    loadBookings();
-  }, []);
-
-  // 🔄 Also reload when tab becomes active
-  useEffect(() => {
-    if (active) loadBookings();
+    if (active) {
+      loadBookings();
+    }
   }, [active]);
 
-  if (!bookings.length)
-    return <p className="text-slate-400 text-center mt-6">No bookings yet.</p>;
+  // 🔹 Also auto-refresh when any booking updates (via Socket)
+  useEffect(() => {
+    function refreshOnBookingChange(data) {
+      if (active && user) loadBookings();
+    }
+
+    socket.on("booking_update", refreshOnBookingChange);
+    socket.on("booking_cleanup", refreshOnBookingChange);
+
+    return () => {
+      socket.off("booking_update", refreshOnBookingChange);
+      socket.off("booking_cleanup", refreshOnBookingChange);
+    };
+  }, [active, user]);
 
   return (
-    <div className="p-4 grid gap-4 max-w-md mx-auto">
-      {bookings.map((b) => (
-        <div
-          key={b.token}
-          className="bg-darkbg border border-neon/40 rounded-xl p-4 shadow-md"
-        >
-          <p className="text-neon font-bold text-lg mb-1">Room {b.room}</p>
-          <p className="text-slate-300 text-sm">{b.day} — {b.time}</p>
-          <p className="text-slate-400 text-xs mt-2">
-            Token: <span className="text-slate-200">{b.token}</span>
-          </p>
-          <p className="text-slate-500 text-xs mt-1">
-            Enrollment: {user}
-          </p>
+    <div className="p-4 flex flex-col items-center text-slate-100">
+      <h2 className="text-neon text-lg font-bold mb-4">My Bookings</h2>
+      {loading ? (
+        <p className="text-slate-400 animate-pulse">Loading your bookings...</p>
+      ) : bookings.length === 0 ? (
+        <p className="text-slate-400 mt-6">No active bookings found.</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 w-full max-w-md overflow-y-auto">
+          {bookings.map((b) => (
+            <div
+              key={b.token}
+              className="bg-darkbg border border-neon/30 rounded-xl p-4 shadow-md shadow-neon/10"
+            >
+              <p className="text-sm mb-2">
+                <span className="text-slate-400">Room:</span>{" "}
+                <span className="text-neon font-semibold">{b.room}</span>
+              </p>
+              <p className="text-sm mb-1">
+                <span className="text-slate-400">Day:</span> {b.day}
+              </p>
+              <p className="text-sm mb-1">
+                <span className="text-slate-400">Time:</span> {b.time}
+              </p>
+              <p className="text-sm mb-1">
+                <span className="text-slate-400">Enrollment:</span> {b.user}
+              </p>
+              <p className="text-xs text-slate-500 mt-2">
+                Token: {b.token.slice(0, 8)}...
+              </p>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 }

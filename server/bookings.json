@@ -3,19 +3,28 @@
     "CR401": [
       {
         "time": "11-12",
-        "token": "1b7b285f-55c1-40ab-9ee6-50d9cae4eb17",
-        "user": "2401030067",
-        "bookedAt": 1762493495447,
-        "expiresAt": 1762497095447
+        "token": "4caba967-d875-4706-8399-447fb0b6cc8b",
+        "user": "0",
+        "bookedAt": 1762495575540,
+        "expiresAt": 1762499175540
       }
     ],
     "CR701": [
       {
         "time": "11-12",
-        "token": "1cff6a83-b87a-44f1-be0d-3d76c0290419",
-        "user": "00",
-        "bookedAt": 1762493509723,
-        "expiresAt": 1762497109723
+        "token": "0caaa288-aefc-41c5-ad43-16f5d4300355",
+        "user": "1",
+        "bookedAt": 1762495630839,
+        "expiresAt": 1762499230839
+      }
+    ],
+    "CR702": [
+      {
+        "time": "11-12",
+        "token": "386b1985-e85d-46b5-a538-dd969420ccf7",
+        "user": "2",
+        "bookedAt": 1762495796355,
+        "expiresAt": 1762499396355
       }
     ]
   }
