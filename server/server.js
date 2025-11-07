@@ -1,5 +1,4 @@
-// server/server.js
-// Complete backend: CSV -> memory empties, bookings persisted to bookings.json, socket.io, upload & reload.
+
 
 const express = require('express');
 const fs = require('fs');
@@ -11,8 +10,23 @@ const { Server } = require('socket.io');
 const fileUpload = require('express-fileupload');
 const { v4: uuidv4 } = require('uuid');
 
+const ALLOWED_ORIGINS = [
+  "https://spoton-psi.vercel.app", // your frontend prod origin
+  "http://localhost:3000",         // dev (vite)
+];
+
+
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: function(origin, cb){
+    // allow requests with no origin (like curl, server-side)
+    if (!origin) return cb(null, true);
+    if (ALLOWED_ORIGINS.indexOf(origin) !== -1) return cb(null, true);
+    cb(new Error("CORS not allowed"));
+  },
+  methods: ["GET","POST","OPTIONS"],
+  credentials: true,
+}));
 app.use(express.json());
 app.use(fileUpload());
 
@@ -27,10 +41,9 @@ const BOOKINGS_PATH = path.join(PROJECT_ROOT, 'bookings.json');
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
-// In-memory structures
-// emptyMap[DAY][ROOM] = Set(times)
 const emptyMap = {};
 // bookings[DAY][ROOM] = [ { time, token, user, bookedAt, expiresAt } ]
+
 let bookings = {}; // persisted to file
 
 // Booking defaults
