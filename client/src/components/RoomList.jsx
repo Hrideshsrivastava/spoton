@@ -129,7 +129,14 @@ export default function RoomList({ user }) {
         time={selected.time}
         room={modal.room}
         user={user}
-        onBooked={() => setModal({ open: false, room: "" })}
+        onBooked={() => {
+  setModal({ open: false, room: "" });
+  // 🔄 Re-fetch rooms after a successful booking
+  setTimeout(() => {
+    setSelected((prev) => ({ ...prev })); // triggers re-fetch via useEffect
+  }, 100);
+}}
+
       />
     </div>
   );

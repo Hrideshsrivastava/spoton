@@ -1,34 +1,49 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import api from "../api";
 
-export default function MyBookings({ user }) {
+export default function MyBookings({ user, active }) {
   const [bookings, setBookings] = useState([]);
 
-  useEffect(() => {
-    async function loadBookings() {
+  async function loadBookings() {
+    try {
       const res = await api.get(`/api/user-bookings?user=${user}`);
+
       setBookings(res.data.bookings || []);
+    } catch (err) {
+      console.error("Booking load failed:", err);
     }
+  }
+
+  // Load when mounted
+  useEffect(() => {
     loadBookings();
-  }, [user]);
+  }, []);
+
+  // 🔄 Also reload when tab becomes active
+  useEffect(() => {
+    if (active) loadBookings();
+  }, [active]);
+
+  if (!bookings.length)
+    return <p className="text-slate-400 text-center mt-6">No bookings yet.</p>;
 
   return (
-    <div className="p-6 flex flex-col items-center">
-      <h2 className="text-2xl font-bold text-neon mb-4">My Bookings</h2>
-      {bookings.length === 0 ? (
-        <p className="text-slate-400">No active bookings.</p>
-      ) : (
-        <div className="flex flex-col gap-4 w-full max-w-md">
-          {bookings.map((b) => (
-            <div key={b.token} className="bg-slate-800/60 border border-neon/40 rounded-xl p-4 text-center">
-              <h3 className="text-neon text-lg font-bold mb-2">{b.room}</h3>
-              <p>{b.day} — {b.time}</p>
-              <p className="text-slate-400 text-sm mt-2">Token: {b.token}</p>
-              <p className="text-slate-500 text-xs">Valid until {new Date(b.expiresAt).toLocaleTimeString()}</p>
-            </div>
-          ))}
+    <div className="p-4 grid gap-4 max-w-md mx-auto">
+      {bookings.map((b) => (
+        <div
+          key={b.token}
+          className="bg-darkbg border border-neon/40 rounded-xl p-4 shadow-md"
+        >
+          <p className="text-neon font-bold text-lg mb-1">Room {b.room}</p>
+          <p className="text-slate-300 text-sm">{b.day} — {b.time}</p>
+          <p className="text-slate-400 text-xs mt-2">
+            Token: <span className="text-slate-200">{b.token}</span>
+          </p>
+          <p className="text-slate-500 text-xs mt-1">
+            Enrollment: {user}
+          </p>
         </div>
-      )}
+      ))}
     </div>
   );
 }
