@@ -65,31 +65,31 @@ export default function App() {
         </div>
       </nav>
 
-      {/* Content Wrapper (fixes collapsing height) */}
-      <div className="relative flex-1 w-full overflow-hidden">
-        {/* RoomList */}
-        <div
-          className={`absolute inset-0 transition-all duration-500 ease-in-out transform ${
-            page === "rooms"
-              ? "translate-x-0 opacity-100 pointer-events-auto"
-              : "-translate-x-full opacity-0 pointer-events-none"
-          }`}
-        >
-          <RoomList user={user} />
-        </div>
+      {/* Content Wrapper (scrollable per tab) */}
+<div className="relative flex-1 w-full overflow-hidden">
+  {/* RoomList */}
+  <div
+    className={`absolute inset-0 transition-all duration-500 ease-in-out transform 
+      ${page === "rooms"
+        ? "translate-x-0 opacity-100 pointer-events-auto"
+        : "-translate-x-full opacity-0 pointer-events-none"}
+      overflow-y-auto touch-pan-y scroll-smooth`}
+  >
+    <RoomList user={user} />
+  </div>
 
-        {/* MyBookings */}
-        <div
-          className={`absolute inset-0 transition-all duration-500 ease-in-out transform ${
-            page === "bookings"
-              ? "translate-x-0 opacity-100 pointer-events-auto"
-              : "translate-x-full opacity-0 pointer-events-none"
-          }`}
-        >
-          <MyBookings user={user} active={page === "bookings"} />
+  {/* MyBookings */}
+  <div
+    className={`absolute inset-0 transition-all duration-500 ease-in-out transform 
+      ${page === "bookings"
+        ? "translate-x-0 opacity-100 pointer-events-auto"
+        : "translate-x-full opacity-0 pointer-events-none"}
+      overflow-y-auto touch-pan-y scroll-smooth`}
+  >
+    <MyBookings user={user} />
+  </div>
+</div>
 
-        </div>
-      </div>
     </div>
   );
 }

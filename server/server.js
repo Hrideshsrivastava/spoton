@@ -154,7 +154,7 @@ app.get('/api/all', (req, res) => {
     "MONDAY",
     "TUESDAY",
     "WEDNESDAY",
-    "THURSDAY",
+    "THURSDAY", 
     "FRIDAY",
     "SATURDAY",
     "SUNDAY"
